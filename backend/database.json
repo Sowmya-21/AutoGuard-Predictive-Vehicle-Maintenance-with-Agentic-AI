@@ -17,10 +17,10 @@
           "status": "Healthy",
           "mileage": 12500,
           "sensors": {
-            "engineTemp": 91.98344291342323,
+            "engineTemp": 91.12079670314925,
             "oilPressure": 40,
             "batteryVoltage": 13.8,
-            "vibrationLevel": 0.49834429134232405,
+            "vibrationLevel": 0.41207967031492837,
             "brakeWear": 12
           },
           "lastServiceDate": "2023-11-15",
@@ -92,10 +92,10 @@
           "status": "Healthy",
           "mileage": 45000,
           "sensors": {
-            "engineTemp": 94.19672636146592,
+            "engineTemp": 93.14414223492797,
             "oilPressure": 35,
             "batteryVoltage": 12.4,
-            "vibrationLevel": 0.719672636146592,
+            "vibrationLevel": 0.614414223492796,
             "brakeWear": 45
           },
           "lastServiceDate": "2023-10-01",
@@ -167,10 +167,10 @@
           "status": "Warning",
           "mileage": 28000,
           "sensors": {
-            "engineTemp": 114.10586364815694,
+            "engineTemp": 126.47535724523343,
             "oilPressure": 28,
             "batteryVoltage": 13.5,
-            "vibrationLevel": 2.350586364815695,
+            "vibrationLevel": 3.0675357245233457,
             "brakeWear": 30
           },
           "lastServiceDate": "2024-01-10",
@@ -242,10 +242,10 @@
           "status": "Healthy",
           "mileage": 8000,
           "sensors": {
-            "engineTemp": 40.33533663910107,
+            "engineTemp": 40.20714292113188,
             "oilPressure": 0,
             "batteryVoltage": 14.1,
-            "vibrationLevel": 0.23353366391010816,
+            "vibrationLevel": 0.2207142921131882,
             "brakeWear": 5
           },
           "lastServiceDate": "2024-03-01",
@@ -311,10 +311,10 @@
           "status": "Critical",
           "mileage": 62000,
           "sensors": {
-            "engineTemp": 115.95064302659313,
+            "engineTemp": 116.1477222312776,
             "oilPressure": 15,
             "batteryVoltage": 11.8,
-            "vibrationLevel": 4.595064302659313,
+            "vibrationLevel": 4.61477222312776,
             "brakeWear": 88
           },
           "lastServiceDate": "2023-08-20",
@@ -449,7 +449,7 @@
           "timestamp": "2026-06-27T07:13:39.021Z"
         }
       ],
-      "lastUpdated": "2026-06-27T08:28:07.134Z"
+      "lastUpdated": "2026-06-27T08:29:34.990Z"
     }
   }
 }
