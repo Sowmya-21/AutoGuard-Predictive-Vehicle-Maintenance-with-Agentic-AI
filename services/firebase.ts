@@ -83,10 +83,10 @@ const saveMockDb = (data: MockDbStore) => {
 };
 
 // --- BACKEND API ADAPTER LAYER ---
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const apiRequest = async (endpoint: string, method: string = 'GET', body: any = null) => {
-  const url = `${BACKEND_URL}${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
     method,
     headers: {
