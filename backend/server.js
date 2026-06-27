@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -43,7 +44,7 @@ const writeDb = (data) => {
 
 // --- AUTHENTICATION ENDPOINTS ---
 
-app.post('/api/auth/signup', (req, finalRes) => {
+app.post('/api/auth/signup', async (req, finalRes) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return finalRes.status(400).json({ error: "Email and password are required." });
@@ -54,29 +55,58 @@ app.post('/api/auth/signup', (req, finalRes) => {
     return finalRes.status(400).json({ error: "Email already registered." });
   }
 
-  const uid = `backend-uid-${Math.random().toString(36).substr(2, 9)}`;
-  const newUser = { uid, email, password };
-  db.users.push(newUser);
-  writeDb(db);
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const uid = `backend-uid-${Math.random().toString(36).substr(2, 9)}`;
+    const newUser = { uid, email, password: hashedPassword };
+    db.users.push(newUser);
+    writeDb(db);
 
-  console.log(`👤 User signed up: ${email}`);
-  finalRes.json({ uid, email });
+    console.log(`👤 User signed up: ${email}`);
+    finalRes.json({ uid, email });
+  } catch (error) {
+    console.error("Signup error:", error);
+    finalRes.status(500).json({ error: "Internal server error during registration." });
+  }
 });
 
-app.post('/api/auth/signin', (req, finalRes) => {
+app.post('/api/auth/signin', async (req, finalRes) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return finalRes.status(400).json({ error: "Email and password are required." });
   }
 
   const db = readDb();
-  const user = db.users.find(u => u.email === email && u.password === password);
+  const user = db.users.find(u => u.email === email);
   if (!user) {
     return finalRes.status(400).json({ error: "Invalid email or password." });
   }
 
-  console.log(`🔑 User signed in: ${email}`);
-  finalRes.json({ uid: user.uid, email: user.email });
+  try {
+    let isMatch = false;
+    // Check if the stored password is a bcrypt hash
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      // Plain text fallback (for old pre-seeded users), auto-upgrade on successful login
+      isMatch = (password === user.password);
+      if (isMatch) {
+        user.password = await bcrypt.hash(password, 10);
+        writeDb(db);
+        console.log(`🔒 Upgraded credentials to bcrypt hash for user: ${email}`);
+      }
+    }
+
+    if (!isMatch) {
+      return finalRes.status(400).json({ error: "Invalid email or password." });
+    }
+
+    console.log(`🔑 User signed in: ${email}`);
+    finalRes.json({ uid: user.uid, email: user.email });
+  } catch (error) {
+    console.error("Signin error:", error);
+    finalRes.status(500).json({ error: "Internal server error during authentication." });
+  }
 });
 
 // --- FLEET STATE ENDPOINTS ---
@@ -113,9 +143,28 @@ app.get('/api/fleet/state/:userId', (req, finalRes) => {
   finalRes.json(userState);
 });
 
-// Basic check route
-app.get('/health', (req, finalRes) => {
-  finalRes.json({ status: "healthy", service: "AutoGuard API" });
+// --- SYSTEM STATUS ENDPOINTS ---
+
+// Root Route
+app.get('/', (req, res) => {
+  res.json({
+    application: "AutoGuard Predictive Vehicle Maintenance API",
+    version: "1.0.0",
+    status: "Running",
+    documentation: "/health",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Improved Health Endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    service: "AutoGuard Backend API",
+    version: "1.0.0",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.listen(PORT, () => {
