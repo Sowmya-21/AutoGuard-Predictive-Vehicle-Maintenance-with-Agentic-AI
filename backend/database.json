@@ -1,0 +1,455 @@
+{
+  "users": [
+    {
+      "uid": "backend-uid-hp9cd0zh0",
+      "email": "express-admin@autoguard.ai",
+      "password": "password123"
+    }
+  ],
+  "fleetStates": {
+    "backend-uid-hp9cd0zh0": {
+      "vehicles": [
+        {
+          "id": "V-101",
+          "vin": "1G1RC6E45BU109238",
+          "model": "X-Terrain SUV",
+          "owner": "Arjun Mehta",
+          "status": "Healthy",
+          "mileage": 12500,
+          "sensors": {
+            "engineTemp": 91.98344291342323,
+            "oilPressure": 40,
+            "batteryVoltage": 13.8,
+            "vibrationLevel": 0.49834429134232405,
+            "brakeWear": 12
+          },
+          "lastServiceDate": "2023-11-15",
+          "history": [
+            {
+              "date": "2023-11-15",
+              "type": "Scheduled",
+              "description": "10k Service",
+              "notes": "Oil change, filter replacement, fluid top-up."
+            },
+            {
+              "date": "2023-06-10",
+              "type": "Checkup",
+              "description": "Pre-monsoon Check",
+              "notes": "Wiper blades replaced, tire tread depth checked."
+            }
+          ],
+          "reliabilityScore": 96,
+          "reliabilityDetails": {
+            "health": 98,
+            "behavior": 95,
+            "probability": 96,
+            "history": 95,
+            "sensor": 98
+          },
+          "drivingHabit": "Eco",
+          "carbonEmissions": {
+            "current": 185,
+            "potentialReduction": 5
+          },
+          "routeContext": {
+            "destination": "Office Commute",
+            "terrain": "Flat",
+            "weather": "Sunny",
+            "roadCondition": "Good",
+            "riskLevel": "Low",
+            "riskReason": "No current system stress detected."
+          },
+          "predictedFailureTimeline": [
+            {
+              "component": "Cabin Air Filter",
+              "daysRemaining": 180,
+              "probability": 65
+            }
+          ],
+          "remainingUsefulLife": {
+            "brakes": 24000,
+            "engine": 120000,
+            "battery": 72000,
+            "transmission": 180000
+          },
+          "fraudRisk": {
+            "score": 5,
+            "flags": []
+          },
+          "personalizedSchedule": [
+            {
+              "task": "Regular Tire Rotation",
+              "dueInKm": 2500,
+              "rationale": "Optimize tread wear based on flat urban driving habits."
+            }
+          ]
+        },
+        {
+          "id": "V-102",
+          "vin": "JN1AZ0CP5CT093321",
+          "model": "CityFlow Sedan",
+          "owner": "Priya Sharma",
+          "status": "Healthy",
+          "mileage": 45000,
+          "sensors": {
+            "engineTemp": 94.19672636146592,
+            "oilPressure": 35,
+            "batteryVoltage": 12.4,
+            "vibrationLevel": 0.719672636146592,
+            "brakeWear": 45
+          },
+          "lastServiceDate": "2023-10-01",
+          "history": [
+            {
+              "date": "2023-10-01",
+              "type": "Scheduled",
+              "description": "40k Major Service",
+              "notes": "Spark plugs changed, transmission fluid flush, brake inspection."
+            },
+            {
+              "date": "2022-12-05",
+              "type": "Repair",
+              "description": "AC Vent Cleaning",
+              "notes": "Removed debris causing noise in blower."
+            }
+          ],
+          "reliabilityScore": 84,
+          "reliabilityDetails": {
+            "health": 88,
+            "behavior": 82,
+            "probability": 85,
+            "history": 80,
+            "sensor": 89
+          },
+          "drivingHabit": "Normal",
+          "carbonEmissions": {
+            "current": 142,
+            "potentialReduction": 12
+          },
+          "routeContext": {
+            "destination": "Weekend Trip",
+            "terrain": "Highway",
+            "weather": "Rainy",
+            "roadCondition": "Average",
+            "riskLevel": "Low",
+            "riskReason": "Brake wear normal, wet road precautions recommended."
+          },
+          "predictedFailureTimeline": [
+            {
+              "component": "Battery Cells",
+              "daysRemaining": 120,
+              "probability": 70
+            }
+          ],
+          "remainingUsefulLife": {
+            "brakes": 12000,
+            "engine": 85000,
+            "battery": 32000,
+            "transmission": 95000
+          },
+          "fraudRisk": {
+            "score": 12,
+            "flags": []
+          },
+          "personalizedSchedule": [
+            {
+              "task": "Battery Load Test",
+              "dueInKm": 1500,
+              "rationale": "Preventive checkup due to slight voltage dip in rain conditions."
+            }
+          ]
+        },
+        {
+          "id": "V-103",
+          "vin": "2T1BR32E8CC403912",
+          "model": "X-Terrain SUV",
+          "owner": "Rahul Verma",
+          "status": "Warning",
+          "mileage": 28000,
+          "sensors": {
+            "engineTemp": 114.10586364815694,
+            "oilPressure": 28,
+            "batteryVoltage": 13.5,
+            "vibrationLevel": 2.350586364815695,
+            "brakeWear": 30
+          },
+          "lastServiceDate": "2024-01-10",
+          "history": [
+            {
+              "date": "2024-01-10",
+              "type": "Scheduled",
+              "description": "Regular Maintenance",
+              "notes": "Standard oil and filter change."
+            },
+            {
+              "date": "2023-08-15",
+              "type": "Checkup",
+              "description": "Vibration Diagnostics",
+              "notes": "Customer reported minor shake at highway speeds. Wheel balancing performed."
+            }
+          ],
+          "reliabilityScore": 72,
+          "reliabilityDetails": {
+            "health": 70,
+            "behavior": 78,
+            "probability": 68,
+            "history": 72,
+            "sensor": 75
+          },
+          "drivingHabit": "Aggressive",
+          "carbonEmissions": {
+            "current": 215,
+            "potentialReduction": 35
+          },
+          "routeContext": {
+            "destination": "Mountain Pass",
+            "terrain": "Hilly",
+            "weather": "Stormy",
+            "roadCondition": "Slippery",
+            "riskLevel": "Medium",
+            "riskReason": "Vibration level exceeds threshold on mountain slopes."
+          },
+          "predictedFailureTimeline": [
+            {
+              "component": "Vibration Dampener",
+              "daysRemaining": 15,
+              "probability": 82
+            }
+          ],
+          "remainingUsefulLife": {
+            "brakes": 18000,
+            "engine": 62000,
+            "battery": 41000,
+            "transmission": 78000
+          },
+          "fraudRisk": {
+            "score": 18,
+            "flags": []
+          },
+          "personalizedSchedule": [
+            {
+              "task": "Dampener Alignment",
+              "dueInKm": 300,
+              "rationale": "Urgent adjustment required for engine mount dampening on hilly routes."
+            }
+          ]
+        },
+        {
+          "id": "V-104",
+          "vin": "WA1VFAFE4ED023811",
+          "model": "EcoHatch EV",
+          "owner": "Ananya Gupta",
+          "status": "Healthy",
+          "mileage": 8000,
+          "sensors": {
+            "engineTemp": 40.33533663910107,
+            "oilPressure": 0,
+            "batteryVoltage": 14.1,
+            "vibrationLevel": 0.23353366391010816,
+            "brakeWear": 5
+          },
+          "lastServiceDate": "2024-03-01",
+          "history": [
+            {
+              "date": "2024-03-01",
+              "type": "Scheduled",
+              "description": "First Inspection",
+              "notes": "Battery health check 100%. Tire rotation."
+            },
+            {
+              "date": "2023-11-20",
+              "type": "Checkup",
+              "description": "Software Update",
+              "notes": "OTA Update v2.4 failed. Manually flashed firmware."
+            }
+          ],
+          "reliabilityScore": 98,
+          "reliabilityDetails": {
+            "health": 99,
+            "behavior": 98,
+            "probability": 98,
+            "history": 96,
+            "sensor": 99
+          },
+          "drivingHabit": "Eco",
+          "carbonEmissions": {
+            "current": 0,
+            "potentialReduction": 0
+          },
+          "routeContext": {
+            "destination": "Local Shopping",
+            "terrain": "Urban",
+            "weather": "Sunny",
+            "roadCondition": "Good",
+            "riskLevel": "Low",
+            "riskReason": "Excellent electrical cell distribution."
+          },
+          "predictedFailureTimeline": [],
+          "remainingUsefulLife": {
+            "brakes": 45000,
+            "engine": 250000,
+            "battery": 180000,
+            "transmission": 220000
+          },
+          "fraudRisk": {
+            "score": 2,
+            "flags": []
+          },
+          "personalizedSchedule": [
+            {
+              "task": "OTA Firmware Update Sync",
+              "dueInKm": 4000,
+              "rationale": "Maintain optimal battery regeneration curves."
+            }
+          ]
+        },
+        {
+          "id": "V-105",
+          "vin": "3N1AB05E9AL592033",
+          "model": "CityFlow Sedan",
+          "owner": "Kiran Reddy",
+          "status": "Critical",
+          "mileage": 62000,
+          "sensors": {
+            "engineTemp": 115.95064302659313,
+            "oilPressure": 15,
+            "batteryVoltage": 11.8,
+            "vibrationLevel": 4.595064302659313,
+            "brakeWear": 88
+          },
+          "lastServiceDate": "2023-08-20",
+          "history": [
+            {
+              "date": "2023-08-20",
+              "type": "Scheduled",
+              "description": "60k Service",
+              "notes": "Belts replaced. Coolant flushed."
+            },
+            {
+              "date": "2023-02-14",
+              "type": "Repair",
+              "description": "Brake Pad Replacement",
+              "notes": "Front pads replaced. Rotors resurfaced."
+            },
+            {
+              "date": "2022-09-30",
+              "type": "Repair",
+              "description": "Overheating Diagnosis",
+              "notes": "Thermostat replaced. System pressure tested."
+            }
+          ],
+          "reliabilityScore": 48,
+          "reliabilityDetails": {
+            "health": 40,
+            "behavior": 60,
+            "probability": 35,
+            "history": 55,
+            "sensor": 50
+          },
+          "drivingHabit": "Aggressive",
+          "carbonEmissions": {
+            "current": 198,
+            "potentialReduction": 48
+          },
+          "routeContext": {
+            "destination": "Interstate Transport",
+            "terrain": "Hilly",
+            "weather": "Rainy",
+            "roadCondition": "Potholes",
+            "riskLevel": "High",
+            "riskReason": "Worn brakes + aggressive driving + steep hills = emergency failure risk."
+          },
+          "predictedFailureTimeline": [
+            {
+              "component": "Cooling Pump Gasket",
+              "daysRemaining": 2,
+              "probability": 94
+            },
+            {
+              "component": "Front Brake Pads",
+              "daysRemaining": 5,
+              "probability": 89
+            }
+          ],
+          "remainingUsefulLife": {
+            "brakes": 420,
+            "engine": 12000,
+            "battery": 18000,
+            "transmission": 35000
+          },
+          "fraudRisk": {
+            "score": 78,
+            "flags": [
+              "Odometer rollback attempt suspected",
+              "Duplicate claims for calipers"
+            ]
+          },
+          "personalizedSchedule": [
+            {
+              "task": "Emergency Brake Swap",
+              "dueInKm": 10,
+              "rationale": "Brake pads worn down past safety margin. Risk of rotor damage."
+            },
+            {
+              "task": "Cooling Loop Overhaul",
+              "dueInKm": 15,
+              "rationale": "High thermal stress on head gasket; requires coolant flush."
+            }
+          ]
+        }
+      ],
+      "alerts": [
+        {
+          "id": "INIT-V-103-0",
+          "vehicleId": "V-103",
+          "severity": "Warning",
+          "message": "Existing warning anomaly detected on system startup.",
+          "timestamp": "2026-06-27T07:13:39.021Z",
+          "status": "Active"
+        },
+        {
+          "id": "INIT-V-105-1",
+          "vehicleId": "V-105",
+          "severity": "Critical",
+          "message": "Existing critical anomaly detected on system startup.",
+          "timestamp": "2026-06-27T07:13:39.021Z",
+          "status": "Active"
+        }
+      ],
+      "agentLogs": [],
+      "insights": [
+        {
+          "id": "INS-001",
+          "date": "2024-05-10",
+          "component": "Fuel Pump",
+          "defectType": "Premature Wear",
+          "severity": "Medium",
+          "rcaSummary": "Contaminated fuel causing abrasive wear on impeller.",
+          "recommendation": "Improve filtration mesh size in intake.",
+          "status": "Pending"
+        },
+        {
+          "id": "INS-002",
+          "date": "2024-05-12",
+          "component": "Brake Pad",
+          "defectType": "Uneven Wear",
+          "severity": "High",
+          "rcaSummary": "Caliper pin seizure due to insufficient lubrication at assembly.",
+          "recommendation": "Switch to high-temp synthetic grease in manufacturing.",
+          "status": "Pending"
+        }
+      ],
+      "dispatches": [
+        {
+          "id": "DIS-091",
+          "vehicleId": "VEH-001",
+          "type": "Towing",
+          "details": "Towing requested for VEH-001 to nearest Service Center.",
+          "status": "Completed",
+          "timestamp": "2026-06-27T07:13:39.021Z"
+        }
+      ],
+      "lastUpdated": "2026-06-27T08:28:07.134Z"
+    }
+  }
+}

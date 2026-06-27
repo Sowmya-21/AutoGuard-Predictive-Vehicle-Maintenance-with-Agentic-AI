@@ -82,6 +82,25 @@ const saveMockDb = (data: MockDbStore) => {
   localStorage.setItem(MOCK_DB_KEY, JSON.stringify(data));
 };
 
+// --- BACKEND API ADAPTER LAYER ---
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
+const apiRequest = async (endpoint: string, method: string = 'GET', body: any = null) => {
+  const url = `${BACKEND_URL}${endpoint}`;
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
+
 // --- AUTHENTICATION METHODS ---
 
 export const signUpUser = async (email: string, password: string): Promise<any> => {
@@ -93,21 +112,28 @@ export const signUpUser = async (email: string, password: string): Promise<any> 
       throw new Error(error.message || "Failed to sign up.");
     }
   } else {
-    // Mock Signup
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem(MOCK_AUTH_USERS_KEY) || '[]');
-        if (users.some((u: any) => u.email === email)) {
-          reject(new Error("auth/email-already-in-use: Email already registered in Sandbox."));
-          return;
-        }
-        const newUser = { uid: `mock-uid-${Math.random().toString(36).substr(2, 9)}`, email };
-        users.push({ ...newUser, password });
-        localStorage.setItem(MOCK_AUTH_USERS_KEY, JSON.stringify(users));
-        localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(newUser));
-        resolve(newUser);
-      }, 800);
-    });
+    try {
+      const data = await apiRequest('/api/auth/signup', 'POST', { email, password });
+      localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(data));
+      return data;
+    } catch (backendError: any) {
+      console.warn("Backend signup failed/unreachable, falling back to LocalStorage Sandbox:", backendError);
+      
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          const users = JSON.parse(localStorage.getItem(MOCK_AUTH_USERS_KEY) || '[]');
+          if (users.some((u: any) => u.email === email)) {
+            reject(new Error("auth/email-already-in-use: Email already registered in Sandbox."));
+            return;
+          }
+          const newUser = { uid: `mock-uid-${Math.random().toString(36).substr(2, 9)}`, email };
+          users.push({ ...newUser, password });
+          localStorage.setItem(MOCK_AUTH_USERS_KEY, JSON.stringify(users));
+          localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(newUser));
+          resolve(newUser);
+        }, 800);
+      });
+    }
   }
 };
 
@@ -120,20 +146,27 @@ export const signInUser = async (email: string, password: string): Promise<any> 
       throw new Error(error.message || "Failed to sign in.");
     }
   } else {
-    // Mock Signin
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem(MOCK_AUTH_USERS_KEY) || '[]');
-        const user = users.find((u: any) => u.email === email && u.password === password);
-        if (!user) {
-          reject(new Error("auth/wrong-password: Invalid email or password in Sandbox mode."));
-          return;
-        }
-        const authUser = { uid: user.uid, email: user.email };
-        localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(authUser));
-        resolve(authUser);
-      }, 800);
-    });
+    try {
+      const data = await apiRequest('/api/auth/signin', 'POST', { email, password });
+      localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(data));
+      return data;
+    } catch (backendError: any) {
+      console.warn("Backend signin failed/unreachable, falling back to LocalStorage Sandbox:", backendError);
+
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          const users = JSON.parse(localStorage.getItem(MOCK_AUTH_USERS_KEY) || '[]');
+          const user = users.find((u: any) => u.email === email && u.password === password);
+          if (!user) {
+            reject(new Error("auth/wrong-password: Invalid email or password in Sandbox mode."));
+            return;
+          }
+          const authUser = { uid: user.uid, email: user.email };
+          localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(authUser));
+          resolve(authUser);
+        }, 800);
+      });
+    }
   }
 };
 
@@ -149,19 +182,28 @@ export const onAuthChange = (callback: (user: any) => void): (() => void) => {
   if (!isFirebaseMock) {
     return onAuthStateChanged(auth, callback);
   } else {
-    // Poll/check currentUser in LocalStorage
+    let lastUserUid: string | null = 'not_initialized';
     const checkUser = () => {
       const uStr = localStorage.getItem(MOCK_AUTH_CURRENT_USER_KEY);
-      return uStr ? JSON.parse(uStr) : null;
+      if (!uStr) {
+        if (lastUserUid !== null) {
+          lastUserUid = null;
+          callback(null);
+        }
+        return;
+      }
+      try {
+        const user = JSON.parse(uStr);
+        if (user.uid !== lastUserUid) {
+          lastUserUid = user.uid;
+          callback(user);
+        }
+      } catch (e) {}
     };
     
-    // Initial callback
-    callback(checkUser());
+    checkUser();
 
-    // Monitor storage events or set up polling interval
-    const interval = setInterval(() => {
-      callback(checkUser());
-    }, 1000);
+    const interval = setInterval(checkUser, 1000);
 
     return () => clearInterval(interval);
   }
@@ -169,9 +211,6 @@ export const onAuthChange = (callback: (user: any) => void): (() => void) => {
 
 // --- DATABASE OPERATIONS ---
 
-/**
- * Saves the entire application state (vehicles, alerts, logs, insights, dispatches) to Firebase Realtime Database
- */
 export const saveFleetState = async (
   userId: string,
   vehicles: any[],
@@ -180,54 +219,44 @@ export const saveFleetState = async (
   insights: any[],
   dispatches: any[] = []
 ): Promise<void> => {
+  const serializedState = {
+    vehicles,
+    alerts: alerts.map(a => ({
+      ...a,
+      timestamp: a.timestamp instanceof Date ? a.timestamp.toISOString() : a.timestamp
+    })),
+    agentLogs: agentLogs.map(l => ({
+      ...l,
+      timestamp: l.timestamp instanceof Date ? l.timestamp.toISOString() : l.timestamp
+    })),
+    insights,
+    dispatches: dispatches.map(d => ({
+      ...d,
+      timestamp: d.timestamp instanceof Date ? d.timestamp.toISOString() : d.timestamp
+    }))
+  };
+
   if (!isFirebaseMock) {
     try {
-      // Structure by user ID to prevent overlap between different test accounts
       const userRef = ref(db, `users/${userId}/fleetState`);
       await set(userRef, {
-        vehicles,
-        alerts: alerts.map(a => ({
-          ...a,
-          timestamp: a.timestamp instanceof Date ? a.timestamp.toISOString() : a.timestamp
-        })),
-        agentLogs: agentLogs.map(l => ({
-          ...l,
-          timestamp: l.timestamp instanceof Date ? l.timestamp.toISOString() : l.timestamp
-        })),
-        insights,
-        dispatches: dispatches.map(d => ({
-          ...d,
-          timestamp: d.timestamp instanceof Date ? d.timestamp.toISOString() : d.timestamp
-        })),
+        ...serializedState,
         lastUpdated: new Date().toISOString()
       });
     } catch (error) {
       console.error("Failed to sync fleet state to Firebase Database:", error);
     }
   } else {
-    // Save to LocalStorage Mock
-    saveMockDb({
-      vehicles,
-      alerts: alerts.map(a => ({
-        ...a,
-        timestamp: a.timestamp instanceof Date ? a.timestamp.toISOString() : a.timestamp
-      })),
-      agentLogs: agentLogs.map(l => ({
-        ...l,
-        timestamp: l.timestamp instanceof Date ? l.timestamp.toISOString() : l.timestamp
-      })),
-      insights,
-      dispatches: dispatches.map(d => ({
-        ...d,
-        timestamp: d.timestamp instanceof Date ? d.timestamp.toISOString() : d.timestamp
-      }))
-    });
+    saveMockDb(serializedState);
+
+    try {
+      await apiRequest('/api/fleet/state', 'POST', { userId, state: serializedState });
+    } catch (backendError) {
+      console.warn("Backend save state failed/unreachable:", backendError);
+    }
   }
 };
 
-/**
- * Subscribes to the fleet state from Firebase Realtime Database
- */
 export const subscribeToFleetState = (
   userId: string,
   onDataLoaded: (data: { vehicles: any[]; alerts: any[]; agentLogs: any[]; insights: any[]; dispatches: any[] }) => void
@@ -254,15 +283,38 @@ export const subscribeToFleetState = (
           }))
         });
       } else {
-        // No data in db yet
         onDataLoaded({ vehicles: [], alerts: [], agentLogs: [], insights: [], dispatches: [] });
       }
     }, (error) => {
       console.error("Realtime subscription error:", error);
     });
   } else {
-    // LocalStorage Mock loading (one-off read and interval check to simulate realtime syncing)
-    const loadMock = () => {
+    const loadMock = async () => {
+      try {
+        const data = await apiRequest(`/api/fleet/state/${userId}`);
+        if (data && (data.vehicles?.length > 0 || data.alerts?.length > 0 || data.agentLogs?.length > 0)) {
+          onDataLoaded({
+            vehicles: data.vehicles || [],
+            alerts: (data.alerts || []).map((a: any) => ({
+              ...a,
+              timestamp: new Date(a.timestamp)
+            })),
+            agentLogs: (data.agentLogs || []).map((l: any) => ({
+              ...l,
+              timestamp: new Date(l.timestamp)
+            })),
+            insights: data.insights || [],
+            dispatches: (data.dispatches || []).map((d: any) => ({
+              ...d,
+              timestamp: new Date(d.timestamp)
+            }))
+          });
+          return;
+        }
+      } catch (backendError) {
+        console.warn("Backend load state failed, reading local storage copy:", backendError);
+      }
+
       const store = getMockDb();
       onDataLoaded({
         vehicles: store.vehicles?.length > 0 ? store.vehicles : [],
@@ -284,7 +336,6 @@ export const subscribeToFleetState = (
     
     loadMock();
 
-    // Check for updates every 2 seconds
     const interval = setInterval(loadMock, 2000);
     return () => clearInterval(interval);
   }

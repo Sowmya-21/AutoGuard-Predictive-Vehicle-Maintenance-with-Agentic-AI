@@ -138,45 +138,31 @@ AutoGuard/
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Installation & Running
 
 ### Clone the repository
 
 ```bash
 git clone https://github.com/Sowmya-21/AutoGuard-Predictive-Vehicle-Maintenance-with-Agentic-AI.git
-```
-
-### Navigate to the project
-
-```bash
 cd AutoGuard-Predictive-Vehicle-Maintenance-with-Agentic-AI
 ```
 
-### Install frontend dependencies
+### Setup Backend Server
 
 ```bash
-cd frontend
+cd backend
 npm install
+npm run dev # Starts the Express server on http://localhost:5000
 ```
 
-### Install backend dependencies
+### Setup Frontend Dashboard
+
+In a new terminal window:
 
 ```bash
-cd ../backend
+# Navigate to the root directory
 npm install
-```
-
-### Run backend
-
-```bash
-npm start
-```
-
-### Run frontend
-
-```bash
-cd ../frontend
-npm start
+npm run dev # Starts the Vite dev server on http://localhost:3000
 ```
 
 ---
