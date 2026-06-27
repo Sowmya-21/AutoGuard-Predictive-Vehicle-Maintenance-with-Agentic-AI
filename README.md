@@ -37,37 +37,50 @@ The project combines Machine Learning, backend services, and real-time analytics
 
 ### Frontend
 
-* React.js
-* HTML5
-* CSS3
-* JavaScript
+* React.js (TypeScript)
+* HTML5 / CSS3 (Tailwind CSS/Sass styling)
+* Vite (Build tool)
 
 ### Backend
 
-* Node.js
-* Express.js
-* REST APIs
+* Node.js & Express.js
+* JSON Web Tokens (JWT) for secure authentication
+* Swagger UI & swagger-jsdoc (API documentation)
+* Google Gemini AI API (Server-side orchestration)
+
+### Database
+
+* MongoDB Atlas (via Mongoose)
+* Lightweight File System fallback (`database.json`) for sandbox execution
 
 ### AI / Machine Learning
 
 * Python
 * Scikit-learn
-* Pandas
-* NumPy
-
-### Database
-
-* MongoDB
+* Pandas & NumPy
 
 ### Visualization
 
 * Chart.js / Recharts
 
-### Tools
+### Tools & Deployment
 
-* Git
-* GitHub
+* Git / GitHub
+* Vercel (Frontend Hosting)
+* Render (Backend API Hosting)
 * Postman
+
+---
+
+## 📖 API Documentation
+
+AutoGuard features interactive OpenAPI/Swagger documentation for all backend routes. When running the server locally or in production, navigate to:
+
+```text
+http://localhost:5000/docs
+```
+
+This portal allows you to review schemas, test the JWT-protected endpoints, and trigger simulated diagnostic routines directly from your browser.
 
 ---
 

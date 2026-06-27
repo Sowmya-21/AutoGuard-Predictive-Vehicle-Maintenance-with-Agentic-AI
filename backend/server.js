@@ -3,28 +3,61 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 const { GoogleGenAI, Type } = require('@google/genai');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const DB_PATH = path.join(__dirname, 'database.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'autoguard_super_secret_key_13579';
 
 // Initialize Gemini Client
 const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
 const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
-
 const isGeminiConfigured = () => !!geminiApiKey;
 
-app.use(cors());
-app.use(express.json());
+// --- DATABASE INTEGRATION (MongoDB Atlas with local JSON fallback) ---
+const MONGODB_URI = process.env.MONGODB_URI || '';
+let useMongo = false;
 
-// Request logging middleware
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
+// Schemas & Models
+const UserSchema = new mongoose.Schema({
+  uid: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
 });
+const MongoUser = mongoose.models.User || mongoose.model('User', UserSchema);
 
-// Helper to read database
+const FleetStateSchema = new mongoose.Schema({
+  userId: { type: String, required: true, unique: true },
+  vehicles: { type: Array, default: [] },
+  alerts: { type: Array, default: [] },
+  agentLogs: { type: Array, default: [] },
+  insights: { type: Array, default: [] },
+  dispatches: { type: Array, default: [] },
+  lastUpdated: { type: Date, default: Date.now }
+});
+const MongoFleetState = mongoose.models.FleetState || mongoose.model('FleetState', FleetStateSchema);
+
+if (MONGODB_URI) {
+  mongoose.connect(MONGODB_URI)
+    .then(() => {
+      console.log("🔋 Connected successfully to MongoDB Atlas.");
+      useMongo = true;
+    })
+    .catch(err => {
+      console.error("❌ MongoDB connection failed. Falling back to local JSON database:", err.message);
+      useMongo = false;
+    });
+} else {
+  console.log("ℹ️ MONGODB_URI not provided. Running in lightweight local JSON database mode.");
+  useMongo = false;
+}
+
+// Helpers for Local JSON Database Fallback
 const readDb = () => {
   if (!fs.existsSync(DB_PATH)) {
     const initialState = { users: [], fleetStates: {} };
@@ -40,7 +73,6 @@ const readDb = () => {
   }
 };
 
-// Helper to write database
 const writeDb = (data) => {
   try {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
@@ -49,47 +81,224 @@ const writeDb = (data) => {
   }
 };
 
-// --- AUTHENTICATION ENDPOINTS ---
+// Database Abstract Layer Actions
+const getUser = async (email) => {
+  if (useMongo) {
+    return await MongoUser.findOne({ email });
+  }
+  const db = readDb();
+  return db.users.find(u => u.email === email);
+};
 
+const createUser = async (uid, email, hashedPassword) => {
+  if (useMongo) {
+    const newUser = new MongoUser({ uid, email, password: hashedPassword });
+    return await newUser.save();
+  }
+  const db = readDb();
+  const newUser = { uid, email, password: hashedPassword };
+  db.users.push(newUser);
+  writeDb(db);
+  return newUser;
+};
+
+const upgradePassword = async (email, hashedPassword) => {
+  if (useMongo) {
+    await MongoUser.updateOne({ email }, { password: hashedPassword });
+  } else {
+    const db = readDb();
+    const user = db.users.find(u => u.email === email);
+    if (user) {
+      user.password = hashedPassword;
+      writeDb(db);
+    }
+  }
+};
+
+const saveFleetState = async (userId, state) => {
+  if (useMongo) {
+    return await MongoFleetState.findOneAndUpdate(
+      { userId },
+      { ...state, lastUpdated: new Date() },
+      { upsert: true, new: true }
+    );
+  }
+  const db = readDb();
+  db.fleetStates[userId] = {
+    ...state,
+    lastUpdated: new Date().toISOString()
+  };
+  writeDb(db);
+};
+
+const getFleetState = async (userId) => {
+  if (useMongo) {
+    return await MongoFleetState.findOne({ userId });
+  }
+  const db = readDb();
+  return db.fleetStates[userId];
+};
+
+// --- MIDDLEWARES ---
+app.use(cors());
+app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// JWT authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: "Access token required." });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Invalid or expired token." });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// --- SWAGGER DOCUMENTATION CONFIGURATION ---
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'AutoGuard Predictive Vehicle Maintenance API',
+      version: '1.0.0',
+      description: 'API documentation for the AutoGuard Fleet Maintenance platform.',
+    },
+    servers: [
+      {
+        url: `http://localhost:${PORT}`,
+        description: 'API Server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
+  },
+  apis: [__filename],
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// --- API DOCUMENTATION & ROUTES ---
+
+/**
+ * @openapi
+ * /api/auth/signup:
+ *   post:
+ *     summary: Register a new user account
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: admin@autoguard.ai
+ *               password:
+ *                 type: string
+ *                 example: securePassword123
+ *     responses:
+ *       200:
+ *         description: User signed up successfully and authenticated
+ *       400:
+ *         description: Missing fields or email already exists
+ */
 app.post('/api/auth/signup', async (req, finalRes) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return finalRes.status(400).json({ error: "Email and password are required." });
   }
 
-  const db = readDb();
-  if (db.users.find(u => u.email === email)) {
-    return finalRes.status(400).json({ error: "Email already registered." });
-  }
-
   try {
+    const existing = await getUser(email);
+    if (existing) {
+      return finalRes.status(400).json({ error: "Email already registered." });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const uid = `backend-uid-${Math.random().toString(36).substr(2, 9)}`;
-    const newUser = { uid, email, password: hashedPassword };
-    db.users.push(newUser);
-    writeDb(db);
+    await createUser(uid, email, hashedPassword);
 
     console.log(`👤 User signed up: ${email}`);
-    finalRes.json({ uid, email });
+    
+    // Generate JWT token
+    const token = jwt.sign({ uid, email }, JWT_SECRET, { expiresIn: '24h' });
+    finalRes.json({ uid, email, token });
   } catch (error) {
     console.error("Signup error:", error);
     finalRes.status(500).json({ error: "Internal server error during registration." });
   }
 });
 
+/**
+ * @openapi
+ * /api/auth/signin:
+ *   post:
+ *     summary: Sign in with email and password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: express-admin@autoguard.ai
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Successful sign in, returns user session and JWT
+ *       400:
+ *         description: Invalid credentials
+ */
 app.post('/api/auth/signin', async (req, finalRes) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return finalRes.status(400).json({ error: "Email and password are required." });
   }
 
-  const db = readDb();
-  const user = db.users.find(u => u.email === email);
-  if (!user) {
-    return finalRes.status(400).json({ error: "Invalid email or password." });
-  }
-
   try {
+    const user = await getUser(email);
+    if (!user) {
+      return finalRes.status(400).json({ error: "Invalid email or password." });
+    }
+
     let isMatch = false;
     // Check if the stored password is a bcrypt hash
     if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
@@ -98,8 +307,8 @@ app.post('/api/auth/signin', async (req, finalRes) => {
       // Plain text fallback (for old pre-seeded users), auto-upgrade on successful login
       isMatch = (password === user.password);
       if (isMatch) {
-        user.password = await bcrypt.hash(password, 10);
-        writeDb(db);
+        const hashed = await bcrypt.hash(password, 10);
+        await upgradePassword(email, hashed);
         console.log(`🔒 Upgraded credentials to bcrypt hash for user: ${email}`);
       }
     }
@@ -109,53 +318,140 @@ app.post('/api/auth/signin', async (req, finalRes) => {
     }
 
     console.log(`🔑 User signed in: ${email}`);
-    finalRes.json({ uid: user.uid, email: user.email });
+    
+    // Generate JWT token
+    const token = jwt.sign({ uid: user.uid, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+    finalRes.json({ uid: user.uid, email: user.email, token });
   } catch (error) {
     console.error("Signin error:", error);
     finalRes.status(500).json({ error: "Internal server error during authentication." });
   }
 });
 
-// --- FLEET STATE ENDPOINTS ---
+// --- FLEET STATE ENDPOINTS (Protected with JWT) ---
 
-app.post('/api/fleet/state', (req, finalRes) => {
+/**
+ * @openapi
+ * /api/fleet/state:
+ *   post:
+ *     summary: Persist current fleet state (Protected)
+ *     tags: [Fleet State]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - state
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 example: backend-uid-hp9cd0zh0
+ *               state:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Fleet state synchronized successfully
+ *       401:
+ *         description: Missing access token
+ *       403:
+ *         description: Invalid or expired token
+ */
+app.post('/api/fleet/state', authenticateToken, async (req, finalRes) => {
   const { userId, state } = req.body;
   if (!userId || !state) {
     return finalRes.status(400).json({ error: "userId and state are required." });
   }
 
-  const db = readDb();
-  db.fleetStates[userId] = {
-    ...state,
-    lastUpdated: new Date().toISOString()
-  };
-  writeDb(db);
-
-  finalRes.json({ success: true });
+  try {
+    await saveFleetState(userId, state);
+    finalRes.json({ success: true });
+  } catch (error) {
+    console.error("Failed to save fleet state:", error);
+    finalRes.status(500).json({ error: "Failed to persist fleet state." });
+  }
 });
 
-app.get('/api/fleet/state/:userId', (req, finalRes) => {
+/**
+ * @openapi
+ * /api/fleet/state/{userId}:
+ *   get:
+ *     summary: Fetch current fleet state (Protected)
+ *     tags: [Fleet State]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: backend-uid-hp9cd0zh0
+ *     responses:
+ *       200:
+ *         description: Returns fleet state object containing vehicles, alerts, logs, etc.
+ *       401:
+ *         description: Missing access token
+ *       403:
+ *         description: Invalid or expired token
+ */
+app.get('/api/fleet/state/:userId', authenticateToken, async (req, finalRes) => {
   const { userId } = req.params;
   if (!userId) {
     return finalRes.status(400).json({ error: "userId is required." });
   }
 
-  const db = readDb();
-  const userState = db.fleetStates[userId];
-
-  if (!userState) {
-    return finalRes.json({ vehicles: [], alerts: [], agentLogs: [], insights: [], dispatches: [] });
+  try {
+    const userState = await getFleetState(userId);
+    if (!userState) {
+      return finalRes.json({ vehicles: [], alerts: [], agentLogs: [], insights: [], dispatches: [] });
+    }
+    finalRes.json(userState);
+  } catch (error) {
+    console.error("Failed to retrieve fleet state:", error);
+    finalRes.status(500).json({ error: "Failed to load fleet state." });
   }
-
-  finalRes.json(userState);
 });
 
 // --- AI ORCHESTRATION ENDPOINTS ---
 
+/**
+ * @openapi
+ * /api/ai/configured:
+ *   get:
+ *     summary: Verify whether Gemini API is active
+ *     tags: [AI Services]
+ *     responses:
+ *       200:
+ *         description: Status check
+ */
 app.get('/api/ai/configured', (req, res) => {
   res.json({ configured: isGeminiConfigured() });
 });
 
+/**
+ * @openapi
+ * /api/ai/diagnose:
+ *   post:
+ *     summary: Generate an AI diagnostics report for vehicle telemetry (Protected)
+ *     tags: [AI Services]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               vehicle:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Diagnostics report generated
+ */
 app.post('/api/ai/diagnose', async (req, res) => {
   const { vehicle } = req.body;
   if (!vehicle) {
@@ -190,6 +486,27 @@ app.post('/api/ai/diagnose', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/ai/manufacturing-insight:
+ *   post:
+ *     summary: Analyze recurring vehicle failures and compile design quality suggestions
+ *     tags: [AI Services]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               failureType:
+ *                 type: string
+ *               vehicleModel:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Analysis complete
+ */
 app.post('/api/ai/manufacturing-insight', async (req, res) => {
   const { failureType, vehicleModel } = req.body;
   if (!failureType || !vehicleModel) {
@@ -237,6 +554,27 @@ app.post('/api/ai/manufacturing-insight', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/ai/customer-message:
+ *   post:
+ *     summary: Compile localized customer notification scripts
+ *     tags: [AI Services]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               vehicle:
+ *                 type: object
+ *               diagnosis:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Script generated
+ */
 app.post('/api/ai/customer-message', async (req, res) => {
   const { vehicle, diagnosis } = req.body;
   if (!vehicle || !diagnosis) {
@@ -268,6 +606,29 @@ app.post('/api/ai/customer-message', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/ai/copilot:
+ *   post:
+ *     summary: Interact with the AI Maintenance Copilot assistant
+ *     tags: [AI Services]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               vehicle:
+ *                 type: object
+ *               question:
+ *                 type: string
+ *               language:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Response generated
+ */
 app.post('/api/ai/copilot', async (req, res) => {
   const { vehicle, question, language } = req.body;
   if (!vehicle || !question || !language) {
@@ -309,7 +670,7 @@ app.post('/api/ai/copilot', async (req, res) => {
         "Hindi": `नमस्ते! मैं आपका AI मेंटेनेंस कोपायलट हूँ। ${ans}`,
         "Telugu": `నమస్కారం! నేను మీ AI మెయింటెనెన్స్ కోపైలట్. ${ans}`,
         "Tamil": `வணக்கம்! நான் உங்கள் AI பராமரிப்பு கோபிலட். ${ans}`,
-        "Kannada": `ನమಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ AI ನಿರ್ವಹಣಾ ಕೊಪೈಲಟ್. ${ans}`,
+        "Kannada": `ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ AI ನಿರ್ವಹಣಾ ಕೊಪೈಲಟ್. ${ans}`,
         "Bengali": `নমস্কার! আমি আপনার AI রক্ষণাবেক্ষণ কোপাইলট। ${ans}`
       };
       return res.json({ answer: translationMocks[language] || ans });
@@ -350,18 +711,36 @@ app.post('/api/ai/copilot', async (req, res) => {
 
 // --- SYSTEM STATUS ENDPOINTS ---
 
-// Root Route
+/**
+ * @openapi
+ * /:
+ *   get:
+ *     summary: Retrieve API root status metadata
+ *     tags: [System Status]
+ *     responses:
+ *       200:
+ *         description: Root API Metadata
+ */
 app.get('/', (req, res) => {
   res.json({
     application: "AutoGuard Predictive Vehicle Maintenance API",
     version: "1.0.0",
     status: "Running",
-    documentation: "/health",
+    documentation: "/docs",
     timestamp: new Date().toISOString()
   });
 });
 
-// Improved Health Endpoint
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: API health and uptime information
+ *     tags: [System Status]
+ *     responses:
+ *       200:
+ *         description: Health details
+ */
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: "healthy",

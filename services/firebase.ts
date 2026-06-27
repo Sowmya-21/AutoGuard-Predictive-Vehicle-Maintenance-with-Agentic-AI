@@ -87,16 +87,22 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const apiRequest = async (endpoint: string, method: string = 'GET', body: any = null) => {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = localStorage.getItem('autoguard_jwt_token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
   const response = await fetch(url, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: body ? JSON.stringify(body) : null
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    const errData = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(errData.error || 'Server error');
   }
   return response.json();
 };
@@ -114,6 +120,9 @@ export const signUpUser = async (email: string, password: string): Promise<any> 
   } else {
     try {
       const data = await apiRequest('/api/auth/signup', 'POST', { email, password });
+      if (data.token) {
+        localStorage.setItem('autoguard_jwt_token', data.token);
+      }
       localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(data));
       return data;
     } catch (backendError: any) {
@@ -148,6 +157,9 @@ export const signInUser = async (email: string, password: string): Promise<any> 
   } else {
     try {
       const data = await apiRequest('/api/auth/signin', 'POST', { email, password });
+      if (data.token) {
+        localStorage.setItem('autoguard_jwt_token', data.token);
+      }
       localStorage.setItem(MOCK_AUTH_CURRENT_USER_KEY, JSON.stringify(data));
       return data;
     } catch (backendError: any) {
@@ -175,6 +187,7 @@ export const signOutUser = async (): Promise<void> => {
     await signOut(auth);
   } else {
     localStorage.removeItem(MOCK_AUTH_CURRENT_USER_KEY);
+    localStorage.removeItem('autoguard_jwt_token');
   }
 };
 
