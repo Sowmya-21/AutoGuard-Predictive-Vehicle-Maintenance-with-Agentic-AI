@@ -10,6 +10,16 @@ The project combines Machine Learning, backend services, and real-time analytics
 
 ---
 
+## 📸 Screenshots
+
+### Dashboard Command Center
+![Dashboard](./screenshots/dashboard.png)
+
+### Authentication Screen
+![Authentication Screen](./screenshots/login.png)
+
+---
+
 ## ✨ Features
 
 * 🔍 Predictive maintenance using historical sensor data
