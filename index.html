@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                50: 'rgb(var(--slate-50) / <alpha-value>)',
+                100: 'rgb(var(--slate-100) / <alpha-value>)',
+                200: 'rgb(var(--slate-200) / <alpha-value>)',
+                300: 'rgb(var(--slate-300) / <alpha-value>)',
+                400: 'rgb(var(--slate-400) / <alpha-value>)',
+                500: 'rgb(var(--slate-500) / <alpha-value>)',
+                600: 'rgb(var(--slate-600) / <alpha-value>)',
+                700: 'rgb(var(--slate-700) / <alpha-value>)',
+                800: 'rgb(var(--slate-800) / <alpha-value>)',
+                900: 'rgb(var(--slate-900) / <alpha-value>)',
+                950: 'rgb(var(--slate-950) / <alpha-value>)',
+              },
+              gray: {
+                50: 'rgb(var(--gray-50) / <alpha-value>)',
+                100: 'rgb(var(--gray-100) / <alpha-value>)',
+                200: 'rgb(var(--gray-200) / <alpha-value>)',
+                300: 'rgb(var(--gray-300) / <alpha-value>)',
+                400: 'rgb(var(--gray-400) / <alpha-value>)',
+                500: 'rgb(var(--gray-500) / <alpha-value>)',
+                600: 'rgb(var(--gray-600) / <alpha-value>)',
+                700: 'rgb(var(--gray-700) / <alpha-value>)',
+                800: 'rgb(var(--gray-800) / <alpha-value>)',
+                900: 'rgb(var(--gray-900) / <alpha-value>)',
+                950: 'rgb(var(--gray-950) / <alpha-value>)',
+              },
+              red: {
+                400: 'rgb(var(--red-400) / <alpha-value>)',
+                950: 'rgb(var(--red-950) / <alpha-value>)',
+              },
+              yellow: {
+                400: 'rgb(var(--yellow-400) / <alpha-value>)',
+                950: 'rgb(var(--yellow-950) / <alpha-value>)',
+              },
+              emerald: {
+                400: 'rgb(var(--emerald-400) / <alpha-value>)',
+                900: 'rgb(var(--emerald-900) / <alpha-value>)',
+              },
+              blue: {
+                400: 'rgb(var(--blue-400) / <alpha-value>)',
+                900: 'rgb(var(--blue-900) / <alpha-value>)',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --slate-50: 248 250 252;
+        --slate-100: 241 245 249;
+        --slate-200: 226 232 240;
+        --slate-300: 203 213 225;
+        --slate-400: 148 163 184;
+        --slate-500: 100 116 139;
+        --slate-600: 71 85 105;
+        --slate-700: 51 65 85;
+        --slate-800: 30 41 59;
+        --slate-900: 15 23 42;
+        --slate-950: 2 6 23;
+
+        --gray-50: 249 250 251;
+        --gray-100: 243 244 246;
+        --gray-200: 229 231 235;
+        --gray-300: 209 213 219;
+        --gray-400: 156 163 175;
+        --gray-500: 107 114 128;
+        --gray-600: 75 85 99;
+        --gray-700: 55 65 81;
+        --gray-800: 31 41 55;
+        --gray-900: 17 24 39;
+        --gray-950: 3 7 18;
+
+        --red-950: 69 10 10;
+        --yellow-950: 66 32 6;
+        --emerald-900: 2 48 32;
+        --blue-900: 30 58 138;
+
+        --red-400: 248 113 113;
+        --yellow-400: 250 204 21;
+        --emerald-400: 52 211 153;
+        --blue-400: 96 165 250;
+      }
+
+      :root.light {
+        --slate-50: 15 23 42;
+        --slate-100: 30 41 59;
+        --slate-200: 51 65 85;
+        --slate-300: 71 85 105;
+        --slate-400: 100 116 139;
+        --slate-500: 148 163 184;
+        --slate-600: 226 232 240;
+        --slate-700: 241 245 249;
+        --slate-800: 255 255 255;
+        --slate-900: 248 250 252;
+        --slate-950: 241 245 249;
+
+        --gray-50: 17 24 39;
+        --gray-100: 31 41 55;
+        --gray-200: 55 65 81;
+        --gray-300: 75 85 99;
+        --gray-400: 107 114 128;
+        --gray-500: 156 163 175;
+        --gray-600: 243 244 246;
+        --gray-700: 249 250 251;
+        --gray-800: 255 255 255;
+        --gray-900: 248 250 252;
+        --gray-950: 241 245 249;
+
+        --red-950: 254 226 226;
+        --yellow-950: 254 243 199;
+        --emerald-900: 209 250 229;
+        --blue-900: 219 234 254;
+
+        --red-400: 220 38 38;
+        --yellow-400: 180 83 9;
+        --emerald-400: 5 150 105;
+        --blue-400: 29 78 216;
+      }
+
+      body { font-family: 'Inter', sans-serif; background-color: rgb(var(--slate-950)); color: rgb(var(--slate-100)); transition: background-color 0.2s, color 0.2s; }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: rgb(var(--slate-900)); }
+      ::-webkit-scrollbar-thumb { background: rgb(var(--slate-700)); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgb(var(--slate-600)); }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0"
+  }
+}
+</script>
+  <script type="module" crossorigin src="./assets/index-CNSohJjz.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+</body>
+</html>
