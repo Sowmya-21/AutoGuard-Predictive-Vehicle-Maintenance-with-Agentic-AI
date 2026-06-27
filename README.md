@@ -15,7 +15,16 @@ The project combines Machine Learning, backend services, and real-time analytics
 ### Dashboard Command Center
 ![Dashboard](./screenshots/dashboard.png)
 
-### Authentication Screen
+### Vehicle Monitor
+![Vehicle Monitor](./screenshots/vehicle_monitor.png)
+
+### Agent Orchestrator
+![Agent Orchestrator](./screenshots/agent_orchestrator.png)
+
+### Manufacturing Quality Insights
+![Manufacturing Quality](./screenshots/manufacturing_quality.png)
+
+### Authentication Portal
 ![Authentication Screen](./screenshots/login.png)
 
 ---
